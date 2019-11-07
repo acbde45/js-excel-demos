@@ -38,39 +38,13 @@ export default class extends Component {
   renderExcel = () => {
     const { data, workbook, currentSheetIndex } = this.state;
     const { header, data: body } = data;
-    console.log(header, body);
-    const dataSource = [
-      {
-        key: '1',
-        name: '胡彦斌',
-        age: 32,
-        address: '西湖区湖底公园1号',
-      },
-      {
-        key: '2',
-        name: '胡彦祖',
-        age: 42,
-        address: '西湖区湖底公园1号',
-      },
-    ];
+    const dataSource = body;
     
-    const columns = [
-      {
-        title: '姓名',
-        dataIndex: 'name',
-        key: 'name',
-      },
-      {
-        title: '年龄',
-        dataIndex: 'age',
-        key: 'age',
-      },
-      {
-        title: '住址',
-        dataIndex: 'address',
-        key: 'address',
-      },
-    ];
+    const columns = header.map((v, i) => ({
+      title: v,
+      dataIndex: v,
+      key: `${v}_${i}`,
+    }));
     
     return <Table dataSource={dataSource} columns={columns} />;
   };
@@ -96,7 +70,7 @@ export default class extends Component {
           <span className="upload-text">上传文件</span>
         </Button>
         <p className="upload-tip">支持 .xlsx、.xls 格式的文件</p>
-        <Button style={{ marginTop: 16, marginLeft: 16 }} onClick={this.testAppendAOAToWorkSheet}>
+        <Button style={{ marginTop: 16, marginLeft: 16 }} onClick={this.exportExcel}>
           导出
         </Button>
         <p>结果输出：</p>
