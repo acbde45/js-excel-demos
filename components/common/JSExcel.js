@@ -154,7 +154,7 @@ export function exportExcelByTable(table, fileName) {
   const worksheet = genWorksheetByTable(table);
   const workbook = genWorkbook(worksheet);
   // 导出 Excel
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(workbook, fileName);
 }
 
 /**
@@ -278,5 +278,5 @@ export function genWorksheetByAOA(aoa) {
  * @param sheetName 
  */
 export function appendWorksheetToWorkbook(workbook, worksheet, sheetName) {
-  return XLSX.utils.book_new(workbook, worksheet, sheetName);
+  return XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 }

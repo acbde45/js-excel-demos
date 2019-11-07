@@ -1,18 +1,12 @@
 import React, { Component } from 'react';
 import { Button, Icon, message } from 'antd';
-import * as XLSX from 'xlsx';
 import {
   ACCEPTABLE_FILE_TYPE,
   CONVERTED_DATA_TYPE,
   readExcel,
   exportExcel,
-  exportExcelByTable,
-  exportExcelByAOA,
-  getWorksheetFromWorkbookBySheetIndex,
-  appendAOAToWorksheet,
-  genWorkbook,
 } from '../../../components/common/JSExcel';
-import './index.css';
+import '../index.css';
 
 export default class extends Component {
   constructor(props) {
@@ -73,47 +67,6 @@ export default class extends Component {
     exportExcel(workbook, fileName);
   }
 
-  exportSpecialExcel = () => {
-    const _headers = ['id', 'name', 'age', 'country', 'remark'];
-    const _data = [
-      { id: '1', name: 'test1', age: '30', country: 'China', remark: 'hello' },
-      {
-        id: '2',
-        name: 'test2',
-        age: '20',
-        country: 'America',
-        remark: 'world'
-      },
-      { id: '3', name: 'test3', age: '18', country: 'Unkonw', remark: '???' }
-    ];
-
-    // 导出 Excel
-    exportExcelByTable({
-      header: _headers,
-      data: _data,
-    }, '一个普通的Excel.xlsx');
-  };
-
-  exportAOA2Excel = () => {
-    const aoa = [
-      [ 'S', 'h', 'e', 'e', 't', 'J', 'S' ],
-      [  1 ,  2 ,  3 ,  4 ,  5 ]
-    ];
-
-    exportExcelByAOA(wxData, 'aoa.xlsx');
-  }
-
-  testAppendAOAToWorkSheet = () => {
-    const { workbook } = this.state;
-    const worksheet = getWorksheetFromWorkbookBySheetIndex(0, workbook);
-    const aoa = [
-      [ 'S', 'h', 'e', 'e', 't', 'J', 'S' ],
-      [  1 ,  2 ,  3 ,  4 ,  5 ]
-    ];
-    appendAOAToWorksheet(worksheet, aoa);
-    this.exportExcel();
-  }
-
   render() {
     const { workbook, fileName } = this.state;
 
@@ -135,15 +88,6 @@ export default class extends Component {
         </Button>
         <p>结果输出：</p>
         <div id="result"></div>
-
-        <Button style={{ marginTop: 16 }} onClick={this.exportSpecialExcel}>
-          导出指定Excel
-        </Button>
-
-        <br />
-        <Button style={{ marginTop: 16 }} onClick={this.exportAOA2Excel}>
-          导出Excel通过aoa的形式
-        </Button>
       </div>
     );
   }
