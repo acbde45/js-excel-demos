@@ -12,7 +12,7 @@ export const CONVERTED_DATA_TYPE = {
   JSON: 'json',
   FORMULAE: 'formulae',
   TABLE: 'table',
-  AOA: 'aoa',
+  AOA: 'aoa', 
 }
 
 export const EXPORT_BY = {
@@ -134,6 +134,12 @@ export function readExcel(file, dataType = CONVERTED_DATA_TYPE.AOA, sheetIndex =
   });
 }
 
+/**
+ * 通用导出Excel的接口
+ * @param data 默认接收一个workbook对象
+ * @param fileName 
+ * @param by 
+ */
 export function exportExcel(data, fileName, by = EXPORT_BY.WORKBOOK) {
   if (EXPORT_BY.JSON === by) {
     return exportExcelByTable(data, fileName);
@@ -215,6 +221,8 @@ export function appendAOAToWorksheet(worksheet, aoa, opts = {}) {
 
 /**
  * 生成一个workbook对象
+ * @param worksheet 
+ * @param sheetName 
  */
 export function genWorkbook(worksheet, sheetName = 'mySheet') {
   const workbook = XLSX.utils.book_new();
@@ -227,6 +235,7 @@ export function genWorkbook(worksheet, sheetName = 'mySheet') {
 
 /**
  * 根据table生成一个工作表
+ * @param table 
  */
 export function genWorksheetByTable(table) {
   const { header, data } = table; 
@@ -266,6 +275,7 @@ export function genWorksheetByTable(table) {
 
 /**
  * 根据json生成一个工作表
+ * @param aoa 
  */
 export function genWorksheetByAOA(aoa) {
   return XLSX.utils.aoa_to_sheet(aoa);
@@ -273,9 +283,9 @@ export function genWorksheetByAOA(aoa) {
 
 /**
  * 将worksheet添加到一个已存在的workbook里
- * @param workbook 
- * @param worksheet 
- * @param sheetName 
+ * @param workbook
+ * @param worksheet
+ * @param sheetName
  */
 export function appendWorksheetToWorkbook(workbook, worksheet, sheetName) {
   return XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
