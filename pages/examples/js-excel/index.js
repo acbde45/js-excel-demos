@@ -38,7 +38,7 @@ export default class extends Component {
   renderExcel = () => {
     const { data, workbook, currentSheetIndex } = this.state;
     const { header, data: body } = data;
-    const dataSource = body;
+    const dataSource = body.map((v, i) => ({ ...v, key: i }));
     
     const columns = header.map((v, i) => ({
       title: v,
