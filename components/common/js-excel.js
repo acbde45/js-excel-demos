@@ -5,21 +5,21 @@ export const JSEXCEL_ERRORS = {
   FILE_TYPE_NOT_RIGHT: 'file type not right', // 文件类型不正确
   EXCEL_FILE_READ_ERROR: 'excel file read error', // excel文件读取错误
   CONVERT_DATA_TYPE_NOT_EXIST: 'convert data type not exist', // 想要转化的数据类型不存在
-}
+};
 
 export const CONVERTED_DATA_TYPE = {
   CSV: 'csv',
   JSON: 'json',
   FORMULAE: 'formulae',
   TABLE: 'table',
-  AOA: 'aoa', 
-}
+  AOA: 'aoa',
+};
 
 export const EXPORT_BY = {
   TABLE: 'table',
   WORKBOOK: 'workbook',
   AOA: 'aoa',
-}
+};
 
 /**
  * 可接受的文件类型
@@ -41,12 +41,40 @@ export function assertFileTypeAcceptable(fileType) {
 }
 
 /**
+ * 获取工作表名称集合
+ * @param workbook
+ */
+export function getSheetNames(workbook) {
+  return workbook.SheetNames;
+}
+
+/**
+ * 获取指定工作表名称的工作表
+ * @param sheetName
+ * @param workbook
+ */
+export function getWorksheetFromWorkbookBySheetName(sheetName, workbook) {
+  return workbook.Sheets[sheetName];
+}
+
+
+/**
+ * 获取指定工作表索引的工作表
+ * @param sheetIndex
+ * @param workbook
+ */
+export function getWorksheetFromWorkbookBySheetIndex(sheetIndex, workbook) {
+  const sheetNames = getSheetNames(workbook); // 工作表名称集合
+  return getWorksheetFromWorkbookBySheetName(sheetNames[sheetIndex], workbook);
+}
+
+
+/**
  * 解析工作表的方法
  * @param worksheet 工作表对象
  * @param type [csv|json|formulae|aoa|table] 默认aoa
  */
 export function parseWorksheet(worksheet, type = CONVERTED_DATA_TYPE.AOA) {
-
   if (!Object.values(CONVERTED_DATA_TYPE).includes(type)) {
     throw new Error(JSEXCEL_ERRORS.CONVERT_DATA_TYPE_NOT_EXIST);
   }
@@ -56,34 +84,32 @@ export function parseWorksheet(worksheet, type = CONVERTED_DATA_TYPE.AOA) {
     return XLSX.utils.sheet_to_formulae(worksheet);
   } else if (type === CONVERTED_DATA_TYPE.JSON) {
     return XLSX.utils.sheet_to_json(worksheet);
-  } else {
-    const csv = XLSX.utils.sheet_to_csv(worksheet);
-    const rows = csv.split('\n');
-    rows.pop();
-    const aoa = rows.map(row => row.split(','));
+  }
+  const csv = XLSX.utils.sheet_to_csv(worksheet);
+  const rows = csv.split('\n');
+  rows.pop();
+  const aoa = rows.map(row => row.split(','));
 
-    if (type === CONVERTED_DATA_TYPE.AOA) {
-      return aoa;
-    } else if (type === CONVERTED_DATA_TYPE.TABLE) {
-      let header = aoa.shift() || [];
-      let emptyCount = 0;
-      header = header.map((v, i) => {
-        const affix = emptyCount === 0 ? '' : `_${emptyCount}`;
-        if (v) {
-          return v;
-        } else {
-          emptyCount++;
-          return `__EMPTY${affix}`;
-        }
-      });
-      
-      const data = aoa.map(row => row.reduce((p, c, ci) => ({
-        ...p,
-        [header[ci]]: c,
-      }), {}));
+  if (type === CONVERTED_DATA_TYPE.AOA) {
+    return aoa;
+  } else if (type === CONVERTED_DATA_TYPE.TABLE) {
+    let header = aoa.shift() || [];
+    let emptyCount = 0;
+    header = header.map((v) => {
+      const affix = emptyCount === 0 ? '' : `_${emptyCount}`;
+      if (v) {
+        return v;
+      }
+      emptyCount += 1;
+      return `__EMPTY${affix}`;
+    });
 
-      return { header, data };
-    }
+    const data = aoa.map(row => row.reduce((p, c, ci) => ({
+      ...p,
+      [header[ci]]: c,
+    }), {}));
+
+    return { header, data };
   }
 }
 
@@ -107,8 +133,9 @@ export function readExcel(file, dataType = CONVERTED_DATA_TYPE.AOA, sheetIndex =
     if (!currentFile) return;
     // 通过FileReader对象读取文件
     const fileReader = new FileReader();
-    fileReader.onload = event => {
-      let worksheet, workbook, parsed;
+    fileReader.onload = (event) => {
+      let worksheet; let workbook; let
+        parsed;
       try {
         const { result } = event.target;
         // 以二进制流方式读取得到整份excel表格对象
@@ -120,7 +147,7 @@ export function readExcel(file, dataType = CONVERTED_DATA_TYPE.AOA, sheetIndex =
 
       try {
         parsed = parseWorksheet(worksheet, dataType);
-      } catch(e) {
+      } catch (e) {
         reject(e);
       }
       resolve({
@@ -135,20 +162,69 @@ export function readExcel(file, dataType = CONVERTED_DATA_TYPE.AOA, sheetIndex =
   });
 }
 
+
 /**
- * 通用导出Excel的接口
- * @param data 默认接收一个workbook对象
- * @param fileName 
- * @param by 
+ * 根据table生成一个工作表
+ * @param table
  */
-export function exportExcel(data, fileName, by = EXPORT_BY.WORKBOOK) {
-  if (EXPORT_BY.JSON === by) {
-    return exportExcelByTable(data, fileName);
-  } else if (EXPORT_BY.AOA === by) {
-    return exportExcelByAOA(data, fileName);
-  } else {
-    return exportExcelByWorkbook(data, fileName);
+export function genWorksheetByTable(table) {
+  const { header, data } = table;
+  if (!header || !data) return;
+  const parsedHeader = header.map((v, i) =>
+    Object.assign({}, { v, position: String.fromCharCode(65 + i) + 1 })
+  )
+    .reduce(
+      (prev, next) =>
+        Object.assign({}, prev, { [next.position]: { v: next.v } }),
+      {}
+    );
+  const parsedData = data.map((v, i) =>
+    header.map((k, j) =>
+      Object.assign(
+        {},
+        { v: v[k], position: String.fromCharCode(65 + j) + (i + 2) }
+      )
+    )
+  )
+    .reduce((prev, next) => prev.concat(next))
+    .reduce(
+      (prev, next) =>
+        Object.assign({}, prev, { [next.position]: { v: next.v } }),
+      {}
+    );
+
+  // 合并 headers 和 data
+  const output = Object.assign({}, parsedHeader, parsedData);
+  // 获取所有单元格的位置
+  const outputPos = Object.keys(output);
+  // 计算出范围
+  const ref = `${outputPos[0]}:${outputPos[outputPos.length - 1]}`;
+
+  return Object.assign({}, output, { '!ref': ref });
+}
+
+/**
+ * 将worksheet添加到一个已存在的workbook里
+ * @param workbook
+ * @param worksheet
+ * @param sheetName
+ */
+export function appendWorksheetToWorkbook(workbook, worksheet, sheetName) {
+  return XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+}
+
+/**
+ * 生成一个workbook对象
+ * @param worksheet
+ * @param sheetName
+ */
+export function genWorkbook(worksheet, sheetName = 'mySheet') {
+  const workbook = XLSX.utils.book_new();
+
+  if (worksheet) {
+    appendWorksheetToWorkbook(workbook, worksheet, sheetName);
   }
+  return workbook;
 }
 
 /**
@@ -163,6 +239,15 @@ export function exportExcelByTable(table, fileName) {
   // 导出 Excel
   XLSX.writeFile(workbook, fileName);
 }
+
+/**
+ * 根据json生成一个工作表
+ * @param aoa
+ */
+export function genWorksheetByAOA(aoa) {
+  return XLSX.utils.aoa_to_sheet(aoa);
+}
+
 
 /**
  * 通用导出Excel文件方法通过aoa的形式
@@ -185,30 +270,18 @@ export function exportExcelByWorkbook(workbook, fileName) {
 }
 
 /**
- * 获取工作表名称集合
- * @param workbook
+ * 通用导出Excel的接口
+ * @param data 默认接收一个workbook对象
+ * @param fileName
+ * @param by
  */
-export function getSheetNames(workbook) {
-  return workbook.SheetNames;
-}
-
-/**
- * 获取指定工作表名称的工作表
- * @param sheetName
- * @param workbook
- */
-export function getWorksheetFromWorkbookBySheetName(sheetName, workbook) {
-  return workbook.Sheets[sheetName];
-}
-
-/**
- * 获取指定工作表索引的工作表
- * @param sheetIndex
- * @param workbook
- */
-export function getWorksheetFromWorkbookBySheetIndex(sheetIndex, workbook) {
-  const sheetNames = getSheetNames(workbook); // 工作表名称集合
-  return getWorksheetFromWorkbookBySheetName(sheetNames[sheetIndex], workbook);
+export function exportExcel(data, fileName, by = EXPORT_BY.WORKBOOK) {
+  if (EXPORT_BY.JSON === by) {
+    return exportExcelByTable(data, fileName);
+  } else if (EXPORT_BY.AOA === by) {
+    return exportExcelByAOA(data, fileName);
+  }
+  return exportExcelByWorkbook(data, fileName);
 }
 
 /**
@@ -218,76 +291,4 @@ export function getWorksheetFromWorkbookBySheetIndex(sheetIndex, workbook) {
  */
 export function appendAOAToWorksheet(worksheet, aoa, opts = {}) {
   return XLSX.utils.sheet_add_aoa(worksheet, aoa, Object.assign({ origin: -1 }, opts));
-}
-
-/**
- * 生成一个workbook对象
- * @param worksheet 
- * @param sheetName 
- */
-export function genWorkbook(worksheet, sheetName = 'mySheet') {
-  const workbook = XLSX.utils.book_new();
-
-  if (worksheet) {
-    appendWorksheetToWorkbook(workbook, worksheet, sheetName);
-  }
-  return workbook;
-}
-
-/**
- * 根据table生成一个工作表
- * @param table 
- */
-export function genWorksheetByTable(table) {
-  const { header, data } = table; 
-  if(!header || !data) return;
-  const parsedHeader = header.map((v, i) =>
-    Object.assign({}, { v: v, position: String.fromCharCode(65 + i) + 1 })
-  )
-  .reduce(
-    (prev, next) =>
-      Object.assign({}, prev, { [next.position]: { v: next.v } }),
-    {}
-  );
-  const parsedData = data.map((v, i) =>
-    header.map((k, j) =>
-      Object.assign(
-        {},
-        { v: v[k], position: String.fromCharCode(65 + j) + (i + 2) }
-      )
-    )
-  )
-  .reduce((prev, next) => prev.concat(next))
-  .reduce(
-    (prev, next) =>
-      Object.assign({}, prev, { [next.position]: { v: next.v } }),
-    {}
-  );
-
-  // 合并 headers 和 data
-  const output = Object.assign({}, parsedHeader, parsedData);
-  // 获取所有单元格的位置
-  const outputPos = Object.keys(output);
-  // 计算出范围
-  const ref = outputPos[0] + ':' + outputPos[outputPos.length - 1];
-
-  return Object.assign({}, output, { '!ref': ref });
-}
-
-/**
- * 根据json生成一个工作表
- * @param aoa 
- */
-export function genWorksheetByAOA(aoa) {
-  return XLSX.utils.aoa_to_sheet(aoa);
-}
-
-/**
- * 将worksheet添加到一个已存在的workbook里
- * @param workbook
- * @param worksheet
- * @param sheetName
- */
-export function appendWorksheetToWorkbook(workbook, worksheet, sheetName) {
-  return XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 }

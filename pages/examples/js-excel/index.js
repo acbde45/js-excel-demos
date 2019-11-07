@@ -5,7 +5,7 @@ import {
   CONVERTED_DATA_TYPE,
   readExcel,
   exportExcel,
-} from '../../../components/common/JSExcel';
+} from '../../../components/common/js-excel';
 import '../index.css';
 
 export default class extends Component {

@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Button, message } from 'antd';
 import {
   exportExcelByAOA,
-} from '../../../components/common/JSExcel';
+} from '../../../components/common/js-excel';
 import '../index.css';
 
 export default class extends Component {
