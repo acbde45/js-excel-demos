@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button, Icon, message } from 'antd';
+import { Button, Icon, message, Table } from 'antd';
 import {
   ACCEPTABLE_FILE_TYPE,
   CONVERTED_DATA_TYPE,
@@ -15,51 +15,64 @@ export default class extends Component {
     this.state = {
       workbook: null,
       fileName: null,
+      currentSheetIndex: null,
+      data: { header: [], data: [] },
     }
   }
 
   readWorkbookFromLocalFile = async event => {
     try {
-      const { workbook, data, file } = await readExcel(event, CONVERTED_DATA_TYPE.CSV);
-      console.log(workbook);
+      const { workbook, data, file, currentSheetIndex } = await readExcel(event, CONVERTED_DATA_TYPE.TABLE);
       this.setState({
         workbook,
         fileName: file.name,
+        currentSheetIndex,
+        data,
       })
-      this.readWorkbook(data);
+      this.renderExcel();
     } catch(e) {
       message.error(e.message);
     }
   };
 
-  readWorkbook = csv => {
-    document.getElementById('result').innerHTML = this.csv2table(csv);
-  };
-
-  csv2table = csv => {
-    let html = '<table border="1" cellspacing="0" cellpadding="8">';
-    const rows = csv.split('\n');
-    rows.pop(); // 最后一行没用的
-    rows.forEach(function(row, idx) {
-      var columns = row.split(',');
-      columns.unshift(idx + 1); // 添加行索引
-      if (idx == 0) {
-        // 添加列索引
-        html += '<tr>';
-        for (var i = 0; i < columns.length; i++) {
-          html +=
-            '<th>' + (i == 0 ? '' : String.fromCharCode(65 + i - 1)) + '</th>';
-        }
-        html += '</tr>';
-      }
-      html += '<tr>';
-      columns.forEach(function(column) {
-        html += '<td>' + column + '</td>';
-      });
-      html += '</tr>';
-    });
-    html += '</table>';
-    return html;
+  renderExcel = () => {
+    const { data, workbook, currentSheetIndex } = this.state;
+    const { header, data: body } = data;
+    console.log(header, body);
+    const dataSource = [
+      {
+        key: '1',
+        name: '胡彦斌',
+        age: 32,
+        address: '西湖区湖底公园1号',
+      },
+      {
+        key: '2',
+        name: '胡彦祖',
+        age: 42,
+        address: '西湖区湖底公园1号',
+      },
+    ];
+    
+    const columns = [
+      {
+        title: '姓名',
+        dataIndex: 'name',
+        key: 'name',
+      },
+      {
+        title: '年龄',
+        dataIndex: 'age',
+        key: 'age',
+      },
+      {
+        title: '住址',
+        dataIndex: 'address',
+        key: 'address',
+      },
+    ];
+    
+    return <Table dataSource={dataSource} columns={columns} />;
   };
 
   exportExcel = () => {
@@ -87,7 +100,9 @@ export default class extends Component {
           导出
         </Button>
         <p>结果输出：</p>
-        <div id="result"></div>
+        <div id="result">
+          { this.renderExcel() }
+        </div>
       </div>
     );
   }

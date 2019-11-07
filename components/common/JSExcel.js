@@ -46,6 +46,7 @@ export function assertFileTypeAcceptable(fileType) {
  * @param type [csv|json|formulae|aoa|table] 默认aoa
  */
 export function parseWorksheet(worksheet, type = CONVERTED_DATA_TYPE.AOA) {
+
   if (!Object.values(CONVERTED_DATA_TYPE).includes(type)) {
     throw new Error(JSEXCEL_ERRORS.CONVERT_DATA_TYPE_NOT_EXIST);
   }
@@ -125,8 +126,8 @@ export function readExcel(file, dataType = CONVERTED_DATA_TYPE.AOA, sheetIndex =
       resolve({
         workbook,
         data: parsed,
-        currentSheetIndex: sheetIndex,
         file: currentFile,
+        currentSheetIndex: sheetIndex,
       });
     };
     // 以二进制方式打开文件
